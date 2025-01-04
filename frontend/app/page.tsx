@@ -40,7 +40,8 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [filings, setFilings] = useState<Filing[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Fixing this to pass properly
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Uploaded files
+  const [AiAnalysisText, setAiAnalysisText] = useState<string | null>(null); // Store returned AiAnalysisText
 
   const documentTypes: string[] = ["10-K", "10-Q", "8-K"];
 
@@ -70,32 +71,47 @@ export default function Home() {
   };
 
   const handleAnalyze = async (): Promise<void> => {
-    if (uploadedFiles.length === 0) {
-      console.error("No files uploaded.");
+    if (selectedItems.length === 0 && uploadedFiles.length === 0) {
+      console.error("No files or filings selected.");
+      setUploadError("No files or filings selected for analysis.");
       return;
     }
 
     try {
       setLoading(true);
 
-      // Prepare the FormData payload
       const formData = new FormData();
-      uploadedFiles.forEach((file) => formData.append("files", file));
 
-      // Send files to the backend
-      const response = await fetch(
-        "http://localhost:4000/api/analyze-uploaded-files",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      // Add selected filings (if any) to the payload
+      if (selectedItems.length > 0) {
+        formData.append(
+          "selectedFilings",
+          JSON.stringify(
+            filings.filter((filing) => selectedItems.includes(filing.formType))
+          )
+        );
+      }
+
+      // Add uploaded files (if any) to the payload
+      if (uploadedFiles.length > 0) {
+        uploadedFiles.forEach((file) => formData.append("uploadedFiles", file));
+      }
+
+      console.log("Form Data:", formData);
+
+      // Send to the backend
+      const response = await fetch("http://localhost:4000/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error(`Analysis failed: ${response.statusText}`);
       }
 
-      console.log("Files uploaded successfully for analysis.");
+      const data = await response.json();
+      setAiAnalysisText(data.AiAnalysisText); // Set the returned AiAnalysisText
+      console.log("Received AiAnalysisText:", data.AiAnalysisText);
 
       setAnalysisTriggered(true);
     } catch (error) {
@@ -110,8 +126,6 @@ export default function Home() {
     const validFiles = Array.from(files).filter(
       (file) => file.type === "application/pdf"
     );
-
-    console.log("Valid files:", validFiles);
 
     if (validFiles.length === 0) {
       setUploadError("Only PDF files are allowed.");
@@ -165,15 +179,11 @@ export default function Home() {
         {uploadError && <p className="text-red-500">{uploadError}</p>}
         {loading && <p>Loading reports, please wait...</p>}
 
-        {analysisTriggered && (
-          <DynamicAnalysisSection
-            selectedItems={selectedItems}
-            retrievedReports={filings}
-            uploadedFiles={uploadedFiles.map((file) => ({
-              name: file.name,
-              text: "",
-            }))}
-          />
+        {AiAnalysisText && (
+          <section className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
+            <h2 className="text-lg font-bold mb-2">Generated AiAnalysisText</h2>
+            <pre className="whitespace-pre-wrap">{AiAnalysisText}</pre>
+          </section>
         )}
       </main>
     </div>

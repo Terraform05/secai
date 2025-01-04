@@ -1,6 +1,6 @@
 import { load } from "cheerio";
 
-async function parse8k(url) {
+export async function process8k(url) {
   try {
     // Fetch the HTML from the given URL with a User-Agent header
     const response = await fetch(url, {
