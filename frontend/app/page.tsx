@@ -7,50 +7,7 @@ import AnalyzeDocuments from "./components/analyzeDocuments";
 import CompanySearch from "./components/companySearch";
 import DynamicAnalysisSection from "./components/analysisDisplay";
 import CompanyDetails from "./components/companyDetails";
-
-interface Company {
-  cik_str: string;
-  ticker: string;
-  title: string;
-}
-
-interface Filing {
-  formType: string;
-  filingDate: string;
-  accessionNumber: string;
-  url?: string;
-}
-
-interface CompanyData {
-  cik: string;
-  entityType: string;
-  sic: string;
-  sicDescription: string;
-  ownerOrg: string;
-  name: string;
-  ticker: string;
-  exchanges: string[];
-  ein: string;
-  description: string;
-  category: string;
-  fiscalYearEnd: string;
-  stateOfIncorporation: string;
-  businessAddress: {
-    street1: string;
-    street2?: string | null;
-    city: string;
-    stateOrCountry: string;
-    zipCode: string;
-    stateOrCountryDescription: string;
-  };
-  phone: string;
-  flags: string;
-  formerNames: {
-    name: string;
-    from: string;
-    to: string;
-  }[];
-}
+import { Company, Filing, CompanyData } from "../public/types/types"; // Import types
 
 // Function to fetch company data
 async function fetchRecentCompanyData(

@@ -1,11 +1,5 @@
 import React from "react";
-
-interface Filing {
-  formType: string;
-  filingDate: string;
-  accessionNumber: string;
-  url?: string;
-}
+import { Filing } from "../../public/types/types"; // Import types
 
 interface FinancialDocumentsProps {
   documentTypes: string[];

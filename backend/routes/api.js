@@ -2,7 +2,7 @@ import express from "express";
 import {
   getMostRecentFilings,
   getCIKSubmissions,
-} from "../utils/filingsUtil.js";
+} from "../utils/secRetrieval.js";
 
 //import { extractTextFromPDF } from "../utils/pdfUtil.js";
 import multer from "multer";

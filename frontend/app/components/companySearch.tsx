@@ -1,15 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, ChangeEvent } from "react";
-
-// Import CIK data
-import cikData from "../../../backend/data/CIK_data.json";
-
-interface Company {
-  cik_str: string; // Store padded CIK as a string
-  ticker: string;
-  title: string;
-}
+import cikData from "../../../backend/data/CIK_data.json"; // Import CIK data
+import { Company } from "../../public/types/types"; // Import types
 
 interface CompanySearchProps {
   onCompanySelect: (company: Company) => void;
