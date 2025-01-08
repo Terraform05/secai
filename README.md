@@ -1,4 +1,4 @@
-My Project: SEC Document Processor
+## **SEC Analyisis**
 
 This application processes SEC documents (10-K, 10-Q) and provides a user interface to interact with the extracted data. It consists of a **backend** for data processing and a **frontend** for displaying the results.
 
