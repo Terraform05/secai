@@ -41,7 +41,9 @@ export default function Home() {
   const [filings, setFilings] = useState<Filing[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Uploaded files
-  const [AiAnalysisText, setAiAnalysisText] = useState<string | null>(null); // Store returned AiAnalysisText
+  const [AiAnalysisTextResponse, setAiAnalysisTextResponse] = useState<
+    string | null
+  >(null); // Store returned AiAnalysisTextResponse
 
   const documentTypes: string[] = ["10-K", "10-Q", "8-K"];
 
@@ -71,6 +73,12 @@ export default function Home() {
   };
 
   const handleAnalyze = async (): Promise<void> => {
+    if (selectedCompany === null) {
+      console.error("No company selected.");
+      setUploadError("No company selected for analysis.");
+      return;
+    }
+
     if (selectedItems.length === 0 && uploadedFiles.length === 0) {
       console.error("No files or filings selected.");
       setUploadError("No files or filings selected for analysis.");
@@ -84,12 +92,11 @@ export default function Home() {
 
       // Add selected filings (if any) to the payload
       if (selectedItems.length > 0) {
-        formData.append(
-          "selectedFilings",
-          JSON.stringify(
-            filings.filter((filing) => selectedItems.includes(filing.formType))
-          )
+        const filingsData = JSON.stringify(
+          filings.filter((filing) => selectedItems.includes(filing.formType))
         );
+        console.log("Filings Data:", filingsData); // Debugging step
+        formData.append("selectedFilings", filingsData);
       }
 
       // Add uploaded files (if any) to the payload
@@ -97,6 +104,16 @@ export default function Home() {
         uploadedFiles.forEach((file) => formData.append("uploadedFiles", file));
       }
 
+      // Add company data to the payload
+      const companyDataBody = {
+        name: selectedCompany.title,
+        industry: companyData?.sicDescription,
+      };
+      const companyDataString = JSON.stringify(companyDataBody);
+      console.log("Company Data:", companyDataString); // Debugging step
+      formData.append("companyData", companyDataString);
+
+      // Log the complete FormData
       console.log("Form Data:", formData);
 
       // Send to the backend
@@ -110,8 +127,11 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setAiAnalysisText(data.AiAnalysisText); // Set the returned AiAnalysisText
-      console.log("Received AiAnalysisText:", data.AiAnalysisText);
+      setAiAnalysisTextResponse(data.AiAnalysisTextResponse);
+      console.log(
+        "Received AiAnalysisTextResponse:",
+        data.AiAnalysisTextResponse
+      );
 
       setAnalysisTriggered(true);
     } catch (error) {
@@ -121,6 +141,7 @@ export default function Home() {
       setLoading(false);
     }
   };
+
 
   const validateFiles = (files: FileList) => {
     const validFiles = Array.from(files).filter(
@@ -179,10 +200,10 @@ export default function Home() {
         {uploadError && <p className="text-red-500">{uploadError}</p>}
         {loading && <p>Loading reports, please wait...</p>}
 
-        {AiAnalysisText && (
+        {AiAnalysisTextResponse && (
           <section className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-            <h2 className="text-lg font-bold mb-2">Generated AiAnalysisText</h2>
-            <pre className="whitespace-pre-wrap">{AiAnalysisText}</pre>
+            <h2 className="text-lg font-bold mb-2">Generated AiAnalysisTextResponse</h2>
+            <pre className="whitespace-pre-wrap">{AiAnalysisTextResponse}</pre>
           </section>
         )}
       </main>

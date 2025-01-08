@@ -20,7 +20,7 @@ function transformCoordinates(x, y, [a, b, c, d, e, f]) {
  * @returns {boolean} Whether the row represents a table.
  */
 function isTableRow(row) {
-  return row.length >= 3; // Rows with 3 or more items are considered part of a table
+  return row.length >= 5; // Rows with 3 or more items are considered part of a table
 }
 
 /**

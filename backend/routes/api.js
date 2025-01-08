@@ -6,9 +6,9 @@ import {
 } from "../utils/secRetrieval.js";
 import { extractFormattedPdfTextFromBuffer } from "../utils/pdfProcessor.js";
 import { process8k } from "../utils/process8k.js";
-import { process10k } from "../utils/process10k.js";
-import { process10kq } from "../utils/process10q.js";
+import { process10kq } from "../utils/process10kq.js";
 import { generatePrompt } from "../utils/prompt.js"; // Import the prompt generation utility
+import { gptCall } from "../utils/gptCall.js"; // Import the GPT-4o-mini API call function
 
 const router = express.Router();
 
@@ -23,49 +23,49 @@ const upload = multer({
   },
 });
 
-// Analyze route
+//Analyze Route
 router.post("/analyze", upload.array("uploadedFiles"), async (req, res) => {
   try {
-    const { selectedFilings } = req.body;
-    const files = req.files;
+    console.log("Received analyze request: ", req.body, req.files?.map((file) => file.originalname));
+    // FormData fields are strings or files; parse them as needed
+    const selectedFilings = req.body.selectedFilings
+      ? JSON.parse(req.body.selectedFilings)
+      : null;
+    const companyData = req.body.companyData
+      ? JSON.parse(req.body.companyData)
+      : null;
 
-    let summary = "";
+    const files = req.files;
+    let processedFileText = "";
 
     // Process selected filings
     if (selectedFilings) {
-      const filings = JSON.parse(selectedFilings);
-      console.log("Selected filings for analysis:", filings);
-
-      for (const filing of filings) {
+      for (const filing of selectedFilings) {
         try {
           if (filing.formType === "8-K") {
             const content = await process8k(filing.url);
-            summary += `Filing: ${filing.formType} (${filing.filingDate})\n\n${content}\n\n`;
-          } else if (filing.formType === "10-K") {
+            processedFileText += `Filing: ${filing.formType} (${filing.filingDate})\n\n${content}\n\n`;
+          } else if (filing.formType === "10-K" || filing.formType === "10-Q") {
             const content = await process10kq(filing.url);
-            summary += `Filing: ${filing.formType} (${filing.filingDate})\n\n${content}\n\n`;
-          } else if (filing.formType === "10-Q") {
-            const content = await process10kq(filing.url);
-            summary += `Filing: ${filing.formType} (${filing.filingDate})\n\n${content}\n\n`;
+            processedFileText += `Filing: ${filing.formType} (${filing.filingDate})\n\n${content}\n\n`;
           } else {
             throw new Error(`Unsupported form type: ${filing.formType}`);
           }
         } catch (error) {
           console.error(`Error analyzing filing ${filing.formType}:`, error);
-          summary += `Filing: ${filing.formType} (${filing.filingDate}) failed to analyze. Error: ${error.message}\n\n`;
+          processedFileText += `Filing: ${filing.formType} (${filing.filingDate}) failed to analyze. Error: ${error.message}\n\n`;
         }
       }
     }
 
     // Process uploaded files
     if (files && files.length > 0) {
-      console.log("Processing uploaded files...");
       const processedFiles = await Promise.all(
         files.map(async (file) => {
           try {
             const uint8Array = new Uint8Array(file.buffer);
             const text = await extractFormattedPdfTextFromBuffer(uint8Array);
-            return `Uploaded File: ${file.originalname} analyzed successfully.\n\n${text}`;
+            return `Uploaded File: ${file.originalname} \n\n${text}`;
           } catch (error) {
             console.error(`Error processing file ${file.originalname}:`, error);
             return `Uploaded File: ${file.originalname} failed to analyze. Error: ${error.message}`;
@@ -73,19 +73,25 @@ router.post("/analyze", upload.array("uploadedFiles"), async (req, res) => {
         })
       );
 
-      summary += processedFiles.join("\n\n");
+      processedFileText += processedFiles.join("\n\n");
     }
+    
+    // Generate prompt
+    const prompt = generatePrompt(
+      companyData, processedFileText.replace(/\r?\n/g, "\n")
+    );
 
-    // Generate prompt based on the summary
-    const prompt = generatePrompt(summary.replace(/\r?\n/g, "\n"));
+    // Call GPT API or mock response
+    const AiAnalysisTextResponse = prompt;
 
-    // Return the prompt to the frontend
-    res.status(200).json({ AiAnalysisText: prompt });
+    res.status(200).json({ AiAnalysisTextResponse });
   } catch (error) {
     console.error("Error analyzing documents:", error);
     res.status(500).json({ error: "Failed to analyze documents." });
   }
 });
+
+
 
 
 // FILINGS HANDLER
